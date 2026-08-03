@@ -1,0 +1,133 @@
+# Project lives at workspace/suan-tianji — run compose from this directory.
+name: suan-tianji
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: suan
+      POSTGRES_PASSWORD: suan
+      POSTGRES_DB: suan
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U suan -d suan"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3;
+      mc alias set local http://minio:9000 minio minio-secret;
+      mc mb -p local/suan-media || true;
+      mc anonymous set download local/suan-media || true;
+      exit 0;
+      "
+
+  migrate:
+    build:
+      context: .
+      target: migrate
+    environment:
+      RUNTIME: node
+      DATABASE_URL: postgres://suan:suan@db:5432/suan
+      LLM_MODE: test
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      target: runner
+    ports:
+      - "3000:3000"
+    environment:
+      RUNTIME: node
+      NODE_ENV: production
+      DATABASE_URL: postgres://suan:suan@db:5432/suan
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_BUCKET: suan-media
+      S3_ACCESS_KEY: minio
+      S3_SECRET_KEY: minio-secret
+      S3_FORCE_PATH_STYLE: "true"
+      S3_REGION: us-east-1
+      LLM_MODE: test
+      LLM_BASE_URL: ""
+      LLM_API_KEY: ""
+      LLM_MODEL: test-model
+      JOBS_INLINE: "false"
+      # Local HTTP — do not set Secure on session cookies
+      COOKIE_SECURE: "false"
+      # Admin console — change in production
+      ADMIN_PASSWORD: admin123
+      ADMIN_SECRET: suan-admin-secret-dev
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  worker:
+    build:
+      context: .
+      target: worker
+    environment:
+      RUNTIME: node
+      DATABASE_URL: postgres://suan:suan@db:5432/suan
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: suan-media
+      S3_ACCESS_KEY: minio
+      S3_SECRET_KEY: minio-secret
+      S3_FORCE_PATH_STYLE: "true"
+      S3_REGION: us-east-1
+      LLM_MODE: test
+      LLM_MODEL: test-model
+      WORKER_POLL_MS: "1500"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      web:
+        condition: service_started
+
+volumes:
+  pgdata:
+  miniodata:

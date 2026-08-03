@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.env
+.env.local
+*.log
+coverage
+.open-next
+.wrangler
+pgdata
+miniodata
+README.md
+pnpm-workspace.yaml

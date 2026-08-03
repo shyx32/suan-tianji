@@ -1,0 +1,31 @@
+# Cloudflare Workers + OpenNext dual-deploy target (production).
+# Local Docker path does NOT require Cloudflare account.
+name = "suan-tianji"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+main = ".open-next/worker.js"
+
+# After OpenNext build, point main to the generated worker entry.
+# Bindings below document the CF adapter surface used by src/adapters/cloudflare.
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "00000000-0000-0000-0000-000000000000"
+localConnectionString = "postgres://suan:suan@127.0.0.1:5432/suan"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "suan-media"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "00000000-0000-0000-0000-000000000000"
+
+[[queues.producers]]
+binding = "AI_JOBS"
+queue = "suan-ai-jobs"
+
+[[queues.consumers]]
+queue = "suan-ai-jobs"
+max_batch_size = 1
+max_retries = 3
