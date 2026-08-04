@@ -47,14 +47,56 @@ export async function withSession(runtime?: AppRuntime): Promise<{
   return { runtime: rt, sid, isNew };
 }
 
+/**
+ * 记录一次访问：统计 + visit_logs + 会话最近 IP/UA
+ * @param countDaily 是否计入每日 visits（通常由客户端 ?visit=1 或新会话触发）
+ */
 export async function markVisitIfNew(
   runtime: AppRuntime,
-  isNew: boolean,
+  countDaily: boolean,
   request: Request,
+  sessionId?: string,
 ) {
-  // Also count visit when client asks via header / first stats call
-  void request;
-  if (isNew) {
+  const { extractRequestMeta, hashText } = await import("./request-meta");
+  const meta = extractRequestMeta(request);
+  const [uaHash, ipHash] = await Promise.all([
+    hashText(meta.userAgent),
+    hashText(meta.ip),
+  ]);
+
+  if (sessionId) {
+    await runtime.sessions.ensure(sessionId, {
+      uaHash: uaHash ?? undefined,
+      ipHash: ipHash ?? undefined,
+      lastIp: meta.ip,
+      lastUa: meta.userAgent,
+      lastPath: meta.path,
+    });
+    if (runtime.sessions.recordAccess) {
+      await runtime.sessions.recordAccess(sessionId, {
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+        path: meta.path,
+        uaHash,
+        ipHash,
+      });
+    }
+  }
+
+  // 明细日志：每次被标记为「访问」时写入
+  if (countDaily) {
+    const { v4: uuid } = await import("uuid");
+    await runtime.visits.create({
+      id: uuid(),
+      sessionId: sessionId ?? null,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+      referer: meta.referer,
+      path: meta.path,
+      method: meta.method,
+      acceptLanguage: meta.acceptLanguage,
+      country: meta.country,
+    });
     const day = new Date().toISOString().slice(0, 10);
     await runtime.stats.bumpVisit(day);
   }

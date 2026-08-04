@@ -1,7 +1,16 @@
 "use client";
 
 import type { BaziChart } from "@/domain/bazi/types";
+import { BaguaWheel, Taiji, TrigramGlyph } from "./Ornaments";
 import { Card, CardBody, CardHeader } from "./ui";
+
+/** 粗略：按柱位映射卦象装饰（年乾、月巽、日离、时坎） */
+const PILLAR_GUA: Record<string, readonly [number, number, number]> = {
+  年: [1, 1, 1],
+  月: [1, 1, 0],
+  日: [1, 0, 1],
+  时: [0, 1, 0],
+};
 
 export function ChartPanel({ chart }: { chart: BaziChart }) {
   const pillars = [
@@ -17,18 +26,38 @@ export function ChartPanel({ chart }: { chart: BaziChart }) {
         eyebrow="结构化结果"
         title="命盘总览"
         subtitle={`${chart.solarLabel} · ${chart.lunar} · 日主 ${chart.dayMaster}${chart.dayMasterWuXing}`}
+        icon={
+          <span className="flex h-10 w-10 items-center justify-center rounded-seal border border-daiqing/15 bg-porcelain text-daiqing">
+            <Taiji className="h-7 w-7" />
+          </span>
+        }
       />
-      <CardBody className="space-y-5">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <CardBody className="relative space-y-5 overflow-hidden">
+        <div
+          className="pointer-events-none absolute -right-8 top-0 h-36 w-36 text-daiqing"
+          aria-hidden
+        >
+          <BaguaWheel
+            className="h-full w-full opacity-[0.06]"
+            spin
+            muted
+            showNames={false}
+          />
+        </div>
+
+        <div className="relative grid grid-cols-2 gap-2 sm:grid-cols-4">
           {pillars.map(({ key, p }) => (
-            <div
-              key={key}
-              className="rounded-2xl border border-daiqing/8 bg-porcelain px-3 py-3 text-center"
-            >
-              <div className="text-[11px] font-semibold tracking-[0.16em] text-faint">
-                {key}柱
+            <div key={key} className="cn-pillar px-3 py-3">
+              <div className="flex items-center justify-center gap-1.5">
+                <TrigramGlyph
+                  lines={PILLAR_GUA[key]}
+                  className="h-2.5 w-3.5 text-daiqing/40"
+                />
+                <div className="text-[11px] font-semibold tracking-[0.18em] text-faint">
+                  {key}柱
+                </div>
               </div>
-              <div className="mt-1.5 text-2xl font-extrabold tracking-[0.18em] text-daiqing">
+              <div className="mt-1.5 font-song text-2xl font-extrabold tracking-[0.2em] text-daiqing">
                 {p.ganZhi}
               </div>
               <div className="mt-1 text-xs text-muted">
@@ -41,7 +70,7 @@ export function ChartPanel({ chart }: { chart: BaziChart }) {
           ))}
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="relative grid gap-2 sm:grid-cols-3">
           <Meta label="生肖" value={chart.shengXiao} />
           <Meta label="起运" value={chart.yunStart} />
           <Meta
@@ -58,18 +87,19 @@ export function ChartPanel({ chart }: { chart: BaziChart }) {
         </div>
 
         {chart.daYun.length > 0 ? (
-          <div>
-            <div className="mb-2 text-xs font-semibold tracking-wide text-muted">
+          <div className="relative">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-muted">
+              <span className="inline-block h-px w-4 bg-daiqing/20" aria-hidden />
               大运一览
             </div>
             <div className="flex flex-wrap gap-2">
               {chart.daYun.map((d) => (
                 <span
                   key={`${d.ganZhi}-${d.startYear}`}
-                  className={`rounded-full border px-2.5 py-1 text-xs ${
+                  className={`rounded-paper border px-2.5 py-1 text-xs tracking-wide ${
                     d.current
                       ? "border-daiqing bg-daiqing font-semibold text-white"
-                      : "border-daiqing/10 bg-porcelain text-muted"
+                      : "border-daiqing/12 bg-porcelain text-muted"
                   }`}
                 >
                   {d.ganZhi} · {d.startYear}
@@ -79,7 +109,7 @@ export function ChartPanel({ chart }: { chart: BaziChart }) {
           </div>
         ) : null}
 
-        <p className="rounded-2xl border border-rose/10 bg-rose/5 px-3 py-2.5 text-sm leading-relaxed text-ink-2">
+        <p className="relative rounded-paper border border-rose/15 bg-rose/5 px-3 py-2.5 font-kai text-sm leading-relaxed text-ink-2">
           {chart.summary}
         </p>
       </CardBody>
@@ -89,9 +119,9 @@ export function ChartPanel({ chart }: { chart: BaziChart }) {
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-daiqing/8 bg-porcelain px-3 py-2">
-      <div className="text-[11px] tracking-wide text-faint">{label}</div>
-      <div className="mt-0.5 text-sm text-ink-2">{value}</div>
+    <div className="rounded-paper border border-daiqing/10 bg-porcelain px-3 py-2">
+      <div className="text-[11px] tracking-[0.12em] text-faint">{label}</div>
+      <div className="mt-0.5 font-song text-sm text-ink-2">{value}</div>
     </div>
   );
 }

@@ -34,16 +34,81 @@ function mapReading(r: Record<string, unknown>): ReadingRow {
 export const sessionRepo: SessionRepo = {
   async ensure(sessionId, meta) {
     await query(
-      `INSERT INTO sessions (id, ua_hash, ip_hash)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (id) DO UPDATE SET last_seen_at = now()`,
-      [sessionId, meta?.uaHash ?? null, meta?.ipHash ?? null],
+      `INSERT INTO sessions (id, ua_hash, ip_hash, last_ip, last_ua, last_path, visit_count)
+       VALUES ($1, $2, $3, $4, $5, $6, 0)
+       ON CONFLICT (id) DO UPDATE SET
+         last_seen_at = now(),
+         ua_hash = COALESCE(EXCLUDED.ua_hash, sessions.ua_hash),
+         ip_hash = COALESCE(EXCLUDED.ip_hash, sessions.ip_hash),
+         last_ip = COALESCE(EXCLUDED.last_ip, sessions.last_ip),
+         last_ua = COALESCE(EXCLUDED.last_ua, sessions.last_ua),
+         last_path = COALESCE(EXCLUDED.last_path, sessions.last_path)`,
+      [
+        sessionId,
+        meta?.uaHash ?? null,
+        meta?.ipHash ?? null,
+        meta?.lastIp ?? null,
+        meta?.lastUa ?? null,
+        meta?.lastPath ?? null,
+      ],
     );
   },
   async touch(sessionId) {
     await query(`UPDATE sessions SET last_seen_at = now() WHERE id = $1`, [
       sessionId,
     ]);
+  },
+  async recordAccess(sessionId, meta) {
+    await query(
+      `UPDATE sessions SET
+         last_seen_at = now(),
+         visit_count = COALESCE(visit_count, 0) + 1,
+         last_ip = COALESCE($2, last_ip),
+         last_ua = COALESCE($3, last_ua),
+         last_path = COALESCE($4, last_path),
+         ua_hash = COALESCE($5, ua_hash),
+         ip_hash = COALESCE($6, ip_hash)
+       WHERE id = $1`,
+      [
+        sessionId,
+        meta.ip ?? null,
+        meta.userAgent ?? null,
+        meta.path ?? null,
+        meta.uaHash ?? null,
+        meta.ipHash ?? null,
+      ],
+    );
+  },
+};
+
+export const visitRepo = {
+  async create(input: {
+    id: string;
+    sessionId?: string | null;
+    ip?: string | null;
+    userAgent?: string | null;
+    referer?: string | null;
+    path?: string | null;
+    method?: string | null;
+    acceptLanguage?: string | null;
+    country?: string | null;
+  }) {
+    await query(
+      `INSERT INTO visit_logs
+        (id, session_id, ip, user_agent, referer, path, method, accept_language, country)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [
+        input.id,
+        input.sessionId ?? null,
+        input.ip ?? null,
+        input.userAgent ?? null,
+        input.referer ?? null,
+        input.path ?? null,
+        input.method ?? null,
+        input.acceptLanguage ?? null,
+        input.country ?? null,
+      ],
+    );
   },
 };
 

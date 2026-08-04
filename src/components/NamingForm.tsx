@@ -4,7 +4,18 @@ import { useState } from "react";
 import type { NamingStructure } from "@/domain/naming/engine";
 import { pollHistory, readJson } from "@/lib/api-client";
 import { MarkdownReport } from "./MarkdownReport";
-import { Alert, Button, Card, CardBody, CardHeader, Field, Input, Select, Textarea } from "./ui";
+import {
+  Alert,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Chip,
+  Field,
+  Input,
+  Select,
+  Textarea,
+} from "./ui";
 
 const STYLES = ["清雅古典", "大气端正", "温润如玉", "现代简约"];
 
@@ -81,7 +92,7 @@ export function NamingForm({ onSaved }: { onSaved?: () => void }) {
     <div className="space-y-6">
       <Card>
         <CardHeader
-          eyebrow="NAMING"
+          eyebrow="名理取名"
           title="宝宝取名"
           subtitle="姓氏、风格与生辰（可选）综合给出候选名与释义。"
         />
@@ -107,8 +118,8 @@ export function NamingForm({ onSaved }: { onSaved?: () => void }) {
               <Field label="出生状态">
                 <Select
                   value={birthStatus}
-                  onChange={(e) =>
-                    setBirthStatus(e.target.value as "born" | "expected")
+                  onValueChange={(v) =>
+                    setBirthStatus(v as "born" | "expected")
                   }
                 >
                   <option value="born">已出生</option>
@@ -147,12 +158,9 @@ export function NamingForm({ onSaved }: { onSaved?: () => void }) {
               <div className="cn-label mb-2">风格</div>
               <div className="flex flex-wrap gap-2">
                 {STYLES.map((s) => (
-                  <button
+                  <Chip
                     key={s}
-                    type="button"
-                    className={
-                      styles.includes(s) ? "cn-chip cn-chip-on" : "cn-chip cn-chip-off"
-                    }
+                    active={styles.includes(s)}
                     onClick={() =>
                       setStyles((prev) =>
                         prev.includes(s)
@@ -162,7 +170,7 @@ export function NamingForm({ onSaved }: { onSaved?: () => void }) {
                     }
                   >
                     {s}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             </div>
@@ -193,9 +201,9 @@ export function NamingForm({ onSaved }: { onSaved?: () => void }) {
               {naming.candidates.slice(0, 6).map((c) => (
                 <div
                   key={c.fullName}
-                  className="rounded-2xl border border-daiqing/10 bg-porcelain px-3 py-3"
+                  className="rounded-paper border border-daiqing/10 bg-porcelain px-3 py-3"
                 >
-                  <div className="text-xl font-extrabold tracking-wider text-daiqing">
+                  <div className="font-song text-xl font-extrabold tracking-wider text-daiqing">
                     {c.fullName}
                   </div>
                   <div className="mt-1 text-sm text-muted">{c.meaning}</div>

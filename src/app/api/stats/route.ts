@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   // First page load passes ?visit=1 once per browser session (client uses sessionStorage)
   if (url.searchParams.get("visit") === "1" || isNew) {
-    await markVisitIfNew(runtime, true, request);
+    await markVisitIfNew(runtime, true, request, sid);
   }
   const snap = await runtime.stats.snapshot();
   return json({ ok: true, ...snap }, { sid });

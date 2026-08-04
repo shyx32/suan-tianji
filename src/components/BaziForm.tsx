@@ -5,7 +5,18 @@ import type { BaziChart } from "@/domain/bazi/types";
 import { pollHistory, readJson } from "@/lib/api-client";
 import { ChartPanel } from "./ChartPanel";
 import { MarkdownReport } from "./MarkdownReport";
-import { Alert, Button, Card, CardBody, CardHeader, Field, Input, Select, Textarea } from "./ui";
+import {
+  Alert,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Chip,
+  Field,
+  Input,
+  Select,
+  Textarea,
+} from "./ui";
 
 const FOCUS = ["事业", "财运", "感情", "健康", "家庭", "人际", "开运"] as const;
 
@@ -91,8 +102,8 @@ export function BaziForm({ onSaved }: { onSaved?: () => void }) {
     <div className="space-y-6">
       <Card>
         <CardHeader
-          eyebrow="BAZI ENGINE"
-          title="生辰八字排盘"
+          eyebrow="八字排盘"
+          title="生辰八字"
           subtitle="填写出生信息与关心维度。先出结构化命盘，再异步生成详批报告（性格 · 学业 · 事业财运感情 · 健康家庭 · 大运流年 · 开运边界）。"
         />
         <CardBody>
@@ -127,14 +138,9 @@ export function BaziForm({ onSaved }: { onSaved?: () => void }) {
               </div>
               <div className="flex flex-wrap gap-2">
                 {FOCUS.map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    className={focus.includes(f) ? "cn-chip cn-chip-on" : "cn-chip cn-chip-off"}
-                    onClick={() => toggle(f)}
-                  >
+                  <Chip key={f} active={focus.includes(f)} onClick={() => toggle(f)}>
                     {f}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             </div>
@@ -167,7 +173,7 @@ export function BaziForm({ onSaved }: { onSaved?: () => void }) {
       {markdown ? (
         <Card>
           <CardHeader
-            eyebrow="REPORT"
+            eyebrow="详批报告"
             title="详批报告"
             subtitle="由结构化命盘扩写 · 仅供文化娱乐参考"
           />

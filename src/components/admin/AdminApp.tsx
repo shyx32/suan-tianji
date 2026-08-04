@@ -2,8 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  Alert,
+  BrandMark,
+  Button,
+  Card,
+  Chip,
+  Field,
+  Input,
+  Select,
+} from "../ui";
 
-type Tab = "dashboard" | "readings" | "sessions" | "system";
+type Tab = "dashboard" | "readings" | "sessions" | "visits" | "system";
 
 interface Dashboard {
   stats: {
@@ -50,6 +60,29 @@ interface SessionRow {
   createdAt: string;
   lastSeenAt: string;
   readings: number;
+  lastIp?: string | null;
+  lastUa?: string | null;
+  lastPath?: string | null;
+  visitCount?: number;
+}
+
+interface VisitRow {
+  id: string;
+  sessionId: string | null;
+  createdAt: string;
+  ip: string | null;
+  userAgent: string | null;
+  referer: string | null;
+  path: string | null;
+  method: string | null;
+  acceptLanguage: string | null;
+  country: string | null;
+}
+
+function uaBrief(ua: string | null | undefined): string {
+  if (!ua) return "—";
+  if (ua.length <= 48) return ua;
+  return `${ua.slice(0, 46)}…`;
 }
 
 const STATUS_OPTS = ["all", "pending", "processing", "ready", "error"] as const;
@@ -80,6 +113,12 @@ export function AdminApp() {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [sessTotal, setSessTotal] = useState(0);
   const [sessPage, setSessPage] = useState(1);
+
+  const [visits, setVisits] = useState<VisitRow[]>([]);
+  const [visitTotal, setVisitTotal] = useState(0);
+  const [visitPage, setVisitPage] = useState(1);
+  const [visitQ, setVisitQ] = useState("");
+  const [visitError, setVisitError] = useState<string | null>(null);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -187,12 +226,37 @@ export function AdminApp() {
     }
   }, [sessPage]);
 
+  const loadVisits = useCallback(async () => {
+    setVisitError(null);
+    try {
+      const params = new URLSearchParams({
+        page: String(visitPage),
+        pageSize: "20",
+      });
+      if (visitQ.trim()) params.set("q", visitQ.trim());
+      const res = await fetch(`/api/admin/visits?${params}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (res.status === 401) {
+        setAuthed(false);
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || "加载失败");
+      setVisits(data.records || []);
+      setVisitTotal(data.total || 0);
+    } catch (err) {
+      setVisitError(err instanceof Error ? err.message : "加载失败");
+    }
+  }, [visitPage, visitQ]);
+
   useEffect(() => {
     if (!authed) return;
     if (tab === "dashboard" || tab === "system") void loadDashboard();
     if (tab === "readings") void loadReadings();
     if (tab === "sessions") void loadSessions();
-  }, [authed, tab, loadDashboard, loadReadings, loadSessions]);
+    if (tab === "visits") void loadVisits();
+  }, [authed, tab, loadDashboard, loadReadings, loadSessions, loadVisits]);
 
   async function openDetail(id: string) {
     const res = await fetch(`/api/admin/readings/${id}`, { cache: "no-store" });
@@ -265,43 +329,39 @@ export function AdminApp() {
   if (!authed) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-porcelain px-4">
-        <div className="cn-card w-full max-w-md p-6 sm:p-8">
-          <div className="mb-1 text-[11px] font-semibold tracking-[0.18em] text-rose">
-            管理员
-          </div>
-          <h1 className="text-xl font-bold text-daiqing">管理员登录</h1>
-          <p className="mt-2 text-sm text-muted">
-            单管理员账号，无角色分级（无 RBAC）。登录后可管理测算任务与会话。
-          </p>
-          <form className="mt-6 space-y-4" onSubmit={login}>
-            <div>
-              <label className="cn-label">管理员密码</label>
-              <input
-                type="password"
-                className="cn-input mt-1.5"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="请输入 ADMIN_PASSWORD"
-                autoComplete="current-password"
-                autoFocus
-                required
-              />
+        <Card className="w-full max-w-md">
+          <div className="p-6 sm:p-8">
+            <div className="mb-1 text-[11px] font-semibold tracking-[0.18em] text-rose">
+              管理员
             </div>
-            {loginError ? (
-              <div className="rounded-xl border border-rose/25 bg-rose/10 px-3 py-2 text-sm text-rose">
-                {loginError}
-              </div>
-            ) : null}
-            <button type="submit" className="cn-btn-primary w-full" disabled={loggingIn}>
-              {loggingIn ? "登录中…" : "以管理员身份登录"}
-            </button>
-          </form>
-          <p className="mt-4 text-center text-xs text-faint">
-            <Link href="/" className="font-semibold text-daiqing hover:underline">
-              ← 返回前台
-            </Link>
-          </p>
-        </div>
+            <h1 className="font-song text-xl font-bold text-daiqing">管理员登录</h1>
+            <p className="mt-2 text-sm text-muted">
+              单管理员账号，无角色分级（无 RBAC）。登录后可管理测算任务与会话。
+            </p>
+            <form className="mt-6 space-y-4" onSubmit={login}>
+              <Field label="管理员密码">
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="请输入 ADMIN_PASSWORD"
+                  autoComplete="current-password"
+                  autoFocus
+                  required
+                />
+              </Field>
+              {loginError ? <Alert>{loginError}</Alert> : null}
+              <Button type="submit" className="w-full" disabled={loggingIn}>
+                {loggingIn ? "登录中…" : "以管理员身份登录"}
+              </Button>
+            </form>
+            <p className="mt-4 text-center text-xs text-faint">
+              <Link href="/" className="font-semibold text-daiqing hover:underline">
+                ← 返回前台
+              </Link>
+            </p>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -313,7 +373,7 @@ export function AdminApp() {
       <header className="sticky top-0 z-40 border-b border-daiqing/8 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <span className="cn-mark h-9 w-9 text-xs">管</span>
+            <BrandMark className="h-9 w-9 text-xs">管</BrandMark>
             <div>
               <div className="text-sm font-bold text-daiqing">管理员控制台</div>
               <div className="text-[11px] text-muted">单管理员 · 无 RBAC</div>
@@ -325,30 +385,25 @@ export function AdminApp() {
                 ["dashboard", "仪表盘"],
                 ["readings", "测算任务"],
                 ["sessions", "会话"],
+                ["visits", "访问记录"],
                 ["system", "系统"],
               ] as const
             ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setTab(id)}
-                className={
-                  tab === id ? "cn-chip cn-chip-on" : "cn-chip cn-chip-off"
-                }
-              >
+              <Chip key={id} active={tab === id} onClick={() => setTab(id)}>
                 {label}
-              </button>
+              </Chip>
             ))}
             <Link href="/" className="cn-btn-ghost !px-3 !py-2 text-xs">
               前台
             </Link>
-            <button
+            <Button
               type="button"
-              className="cn-btn-secondary !px-3 !py-2 text-xs"
+              variant="secondary"
+              className="!px-3 !py-2 text-xs"
               onClick={() => void logout()}
             >
               退出
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -365,20 +420,14 @@ export function AdminApp() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-lg font-bold">仪表盘</h2>
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="cn-btn-ghost !px-3 !py-2 text-xs"
-                  onClick={() => void loadDashboard()}
+                <Button type="button" variant="ghost" className="!px-3 !py-2 text-xs"
+                  onClick={() =>void loadDashboard()}
                 >
-                  刷新
-                </button>
-                <button
-                  type="button"
-                  className="cn-btn-secondary !px-3 !py-2 text-xs"
-                  onClick={() => void requeueStuck()}
+                  刷新</Button>
+                <Button type="button" variant="secondary" className="!px-3 !py-2 text-xs"
+                  onClick={() =>void requeueStuck()}
                 >
-                  重排队卡住任务
-                </button>
+                  重排队卡住任务</Button>
               </div>
             </div>
             {dashError ? (
@@ -485,78 +534,65 @@ export function AdminApp() {
           <section className="space-y-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <h2 className="text-lg font-bold">测算任务</h2>
-              <button
-                type="button"
-                className="cn-btn-ghost !px-3 !py-2 text-xs"
-                onClick={() => void loadReadings()}
+              <Button type="button" variant="ghost" className="!px-3 !py-2 text-xs"
+                onClick={() =>void loadReadings()}
               >
-                刷新
-              </button>
+                刷新</Button>
             </div>
-            <div className="cn-card flex flex-wrap items-end gap-3 p-4">
-              <label className="text-xs">
-                <span className="cn-label">状态</span>
-                <select
-                  className="cn-input mt-1"
-                  value={status}
-                  onChange={(e) => {
-                    setPage(1);
-                    setStatus(e.target.value);
-                  }}
-                >
-                  {STATUS_OPTS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-xs">
-                <span className="cn-label">类型</span>
-                <select
-                  className="cn-input mt-1"
-                  value={type}
-                  onChange={(e) => {
-                    setPage(1);
-                    setType(e.target.value);
-                  }}
-                >
-                  {TYPE_OPTS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="min-w-[12rem] flex-1 text-xs">
-                <span className="cn-label">搜索</span>
-                <input
-                  className="cn-input mt-1"
-                  value={q}
-                  placeholder="标题 / id / session / 错误"
-                  onChange={(e) => setQ(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+            <Card className="p-0">
+            <div className="flex flex-wrap items-end gap-3 p-4">
+              <div className="min-w-[9rem]">
+                <Field label="状态">
+                  <Select
+                    value={status}
+                    onValueChange={(v) => {
                       setPage(1);
-                      void loadReadings();
-                    }
-                  }}
-                />
-              </label>
-              <button
+                      setStatus(v);
+                    }}
+                    options={STATUS_OPTS.map((s) => ({ value: s, label: s }))}
+                  />
+                </Field>
+              </div>
+              <div className="min-w-[9rem]">
+                <Field label="类型">
+                  <Select
+                    value={type}
+                    onValueChange={(v) => {
+                      setPage(1);
+                      setType(v);
+                    }}
+                    options={TYPE_OPTS.map((s) => ({ value: s, label: s }))}
+                  />
+                </Field>
+              </div>
+              <div className="min-w-[12rem] flex-1">
+                <Field label="搜索">
+                  <Input
+                    value={q}
+                    placeholder="标题 / id / session / 错误"
+                    onChange={(e) => setQ(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        setPage(1);
+                        void loadReadings();
+                      }
+                    }}
+                  />
+                </Field>
+              </div>
+              <Button
                 type="button"
-                className="cn-btn-primary !px-4 !py-2.5 text-sm"
+                className="!px-4 !py-2.5 text-sm"
                 onClick={() => {
                   setPage(1);
                   void loadReadings();
                 }}
               >
                 查询
-              </button>
+              </Button>
             </div>
-            {listError ? (
-              <div className="text-sm text-danger">{listError}</div>
-            ) : null}
+            </Card>
+            {listError ? <Alert>{listError}</Alert> : null}
 
             <div className="overflow-x-auto rounded-2xl border border-white/8">
               <table className="w-full min-w-[720px] text-left text-sm">
@@ -634,22 +670,16 @@ export function AdminApp() {
                 共 {total} 条 · 第 {page}/{totalPages} 页
               </span>
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="cn-btn-ghost !px-3 !py-1.5 text-xs"
+                <Button type="button" variant="ghost" className="!px-3 !py-1.5 text-xs"
                   disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() =>setPage((p) => Math.max(1, p - 1))}
                 >
-                  上一页
-                </button>
-                <button
-                  type="button"
-                  className="cn-btn-ghost !px-3 !py-1.5 text-xs"
+                  上一页</Button>
+                <Button type="button" variant="ghost" className="!px-3 !py-1.5 text-xs"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  下一页
-                </button>
+                  下一页</Button>
               </div>
             </div>
 
@@ -690,29 +720,19 @@ export function AdminApp() {
                   />
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="cn-btn-secondary !px-3 !py-2 text-xs"
-                    onClick={() => void act(String(detail.id), "retry")}
+                  <Button type="button" variant="secondary" className="!px-3 !py-2 text-xs"
+                    onClick={() =>void act(String(detail.id), "retry")}
                   >
-                    重新入队
-                  </button>
-                  <button
-                    type="button"
-                    className="cn-btn-ghost !px-3 !py-2 text-xs"
-                    onClick={() =>
-                      void act(String(detail.id), "error", "管理员标记失败")
+                    重新入队</Button>
+                  <Button type="button" variant="ghost" className="!px-3 !py-2 text-xs"
+                    onClick={() =>void act(String(detail.id), "error", "管理员标记失败")
                     }
                   >
-                    标记失败
-                  </button>
-                  <button
-                    type="button"
-                    className="cn-btn-ghost !px-3 !py-2 text-xs text-danger"
-                    onClick={() => void removeReading(String(detail.id))}
+                    标记失败</Button>
+                  <Button type="button" variant="ghost" className="!px-3 !py-2 text-xs text-danger"
+                    onClick={() =>void removeReading(String(detail.id))}
                   >
-                    删除
-                  </button>
+                    删除</Button>
                 </div>
                 {detail.result_markdown ? (
                   <pre className="mt-4 max-h-80 overflow-auto rounded-xl border border-white/8 bg-void/50 p-3 text-xs leading-relaxed text-mist whitespace-pre-wrap">
@@ -741,37 +761,52 @@ export function AdminApp() {
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">会话</h2>
-              <button
+              <Button
                 type="button"
-                className="cn-btn-ghost !px-3 !py-2 text-xs"
+                variant="ghost"
+                className="!px-3 !py-2 text-xs"
                 onClick={() => void loadSessions()}
               >
                 刷新
-              </button>
+              </Button>
             </div>
-            <div className="overflow-x-auto rounded-2xl border border-white/8">
-              <table className="w-full min-w-[640px] text-left text-sm">
-                <thead className="bg-void/60 text-xs text-mist">
+            <div className="overflow-x-auto rounded-2xl border border-daiqing/10">
+              <table className="w-full min-w-[880px] text-left text-sm">
+                <thead className="bg-porcelain-muted text-xs text-muted">
                   <tr>
-                    <th className="px-3 py-2.5">Session ID</th>
-                    <th className="px-3 py-2.5">测算数</th>
+                    <th className="px-3 py-2.5">Session</th>
+                    <th className="px-3 py-2.5">IP</th>
+                    <th className="px-3 py-2.5">UA</th>
+                    <th className="px-3 py-2.5">访问/测算</th>
                     <th className="px-3 py-2.5">最近活跃</th>
-                    <th className="px-3 py-2.5">创建</th>
                     <th className="px-3 py-2.5">操作</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sessions.map((s) => (
-                    <tr key={s.id} className="border-t border-white/5">
-                      <td className="px-3 py-2.5 font-mono text-xs text-ink-2">
-                        {s.id}
+                    <tr key={s.id} className="border-t border-daiqing/8">
+                      <td className="px-3 py-2.5 font-mono text-[11px] text-ink-2">
+                        <div>{s.id.slice(0, 8)}…</div>
+                        <div className="text-faint" title={s.lastPath || ""}>
+                          {s.lastPath || "—"}
+                        </div>
                       </td>
-                      <td className="px-3 py-2.5 text-accent">{s.readings}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs">
+                        {s.lastIp || "—"}
+                      </td>
+                      <td
+                        className="max-w-[14rem] truncate px-3 py-2.5 text-xs text-muted"
+                        title={s.lastUa || ""}
+                      >
+                        {uaBrief(s.lastUa)}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs">
+                        <span className="text-daiqing">{s.visitCount ?? 0}</span>
+                        {" / "}
+                        <span className="text-accent">{s.readings}</span>
+                      </td>
                       <td className="px-3 py-2.5 text-xs text-faint">
                         {new Date(s.lastSeenAt).toLocaleString()}
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-faint">
-                        {new Date(s.createdAt).toLocaleString()}
                       </td>
                       <td className="px-3 py-2.5">
                         <button
@@ -786,10 +821,7 @@ export function AdminApp() {
                   ))}
                   {sessions.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={5}
-                        className="px-3 py-8 text-center text-faint"
-                      >
+                      <td colSpan={6} className="px-3 py-8 text-center text-faint">
                         无会话
                       </td>
                     </tr>
@@ -800,21 +832,162 @@ export function AdminApp() {
             <div className="flex items-center justify-between text-sm text-mist">
               <span>共 {sessTotal} 个会话</span>
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
-                  className="cn-btn-ghost !px-3 !py-1.5 text-xs"
+                  variant="ghost"
+                  className="!px-3 !py-1.5 text-xs"
                   disabled={sessPage <= 1}
                   onClick={() => setSessPage((p) => Math.max(1, p - 1))}
                 >
                   上一页
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="cn-btn-ghost !px-3 !py-1.5 text-xs"
+                  variant="ghost"
+                  className="!px-3 !py-1.5 text-xs"
                   onClick={() => setSessPage((p) => p + 1)}
                 >
                   下一页
-                </button>
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {tab === "visits" && (
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold">访问记录</h2>
+                <p className="mt-0.5 text-xs text-muted">
+                  记录 IP、UA、路径、来源、语言、国家等基本信息（前台 ?visit=1 时写入）
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                className="!px-3 !py-2 text-xs"
+                onClick={() => void loadVisits()}
+              >
+                刷新
+              </Button>
+            </div>
+
+            <Card className="p-0">
+              <div className="flex flex-wrap items-end gap-3 p-4">
+                <div className="min-w-[14rem] flex-1">
+                  <Field label="搜索 IP / UA / 路径 / 来源">
+                    <Input
+                      value={visitQ}
+                      placeholder="例如 127.0.0.1 或 Chrome"
+                      onChange={(e) => setVisitQ(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          setVisitPage(1);
+                          void loadVisits();
+                        }
+                      }}
+                    />
+                  </Field>
+                </div>
+                <Button
+                  type="button"
+                  className="!px-4 !py-2.5 text-sm"
+                  onClick={() => {
+                    setVisitPage(1);
+                    void loadVisits();
+                  }}
+                >
+                  查询
+                </Button>
+              </div>
+            </Card>
+
+            {visitError ? <Alert>{visitError}</Alert> : null}
+
+            <div className="overflow-x-auto rounded-2xl border border-daiqing/10">
+              <table className="w-full min-w-[960px] text-left text-sm">
+                <thead className="bg-porcelain-muted text-xs text-muted">
+                  <tr>
+                    <th className="px-3 py-2.5">时间</th>
+                    <th className="px-3 py-2.5">IP</th>
+                    <th className="px-3 py-2.5">国家</th>
+                    <th className="px-3 py-2.5">路径</th>
+                    <th className="px-3 py-2.5">UA</th>
+                    <th className="px-3 py-2.5">来源</th>
+                    <th className="px-3 py-2.5">语言</th>
+                    <th className="px-3 py-2.5">Session</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visits.map((v) => (
+                    <tr key={v.id} className="border-t border-daiqing/8">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-xs text-faint">
+                        {new Date(v.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-xs">
+                        {v.ip || "—"}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs">{v.country || "—"}</td>
+                      <td
+                        className="max-w-[10rem] truncate px-3 py-2.5 font-mono text-[11px] text-ink-2"
+                        title={v.path || ""}
+                      >
+                        {v.path || "—"}
+                      </td>
+                      <td
+                        className="max-w-[16rem] truncate px-3 py-2.5 text-xs text-muted"
+                        title={v.userAgent || ""}
+                      >
+                        {uaBrief(v.userAgent)}
+                      </td>
+                      <td
+                        className="max-w-[10rem] truncate px-3 py-2.5 text-[11px] text-faint"
+                        title={v.referer || ""}
+                      >
+                        {v.referer || "—"}
+                      </td>
+                      <td
+                        className="max-w-[6rem] truncate px-3 py-2.5 text-[11px] text-faint"
+                        title={v.acceptLanguage || ""}
+                      >
+                        {v.acceptLanguage?.split(",")[0] || "—"}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-[11px] text-faint">
+                        {v.sessionId ? `${v.sessionId.slice(0, 8)}…` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  {visits.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-8 text-center text-faint">
+                        暂无访问记录（打开前台会写入）
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between text-sm text-mist">
+              <span>共 {visitTotal} 条</span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="!px-3 !py-1.5 text-xs"
+                  disabled={visitPage <= 1}
+                  onClick={() => setVisitPage((p) => Math.max(1, p - 1))}
+                >
+                  上一页
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="!px-3 !py-1.5 text-xs"
+                  onClick={() => setVisitPage((p) => p + 1)}
+                >
+                  下一页
+                </Button>
               </div>
             </div>
           </section>

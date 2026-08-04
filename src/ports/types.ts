@@ -7,6 +7,10 @@ export interface SessionRow {
   last_seen_at: Date;
   ua_hash: string | null;
   ip_hash: string | null;
+  last_ip?: string | null;
+  last_ua?: string | null;
+  last_path?: string | null;
+  visit_count?: number;
 }
 
 export interface ReadingRow {

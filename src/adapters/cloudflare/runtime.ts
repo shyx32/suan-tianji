@@ -7,7 +7,12 @@
  */
 import type { AppRuntime, JobQueue, ObjectStorage, RateLimiter } from "@/ports";
 import { createHttpLlmProvider } from "@/adapters/llm/http-provider";
-import { readingRepo, sessionRepo, statsRepo } from "@/adapters/node/repos";
+import {
+  readingRepo,
+  sessionRepo,
+  statsRepo,
+  visitRepo,
+} from "@/adapters/node/repos";
 
 export interface CloudflareEnv {
   HYPERDRIVE?: { connectionString: string };
@@ -95,6 +100,7 @@ export function createCloudflareRuntime(env: CloudflareEnv): AppRuntime {
     sessions: sessionRepo,
     readings: readingRepo,
     stats: statsRepo,
+    visits: visitRepo,
     storage: createR2Storage(env),
     queue: createQueue(env),
     rateLimiter: createKvRateLimiter(env),
