@@ -1,6 +1,14 @@
 "use client";
 
+/**
+ * 全站 UI 出口：交互控件统一 Ant Design，装饰/布局保留国风 cn-*。
+ */
 import { clsx } from "clsx";
+import {
+  Button as AntButton,
+  Input as AntInput,
+  Tag,
+} from "antd";
 import {
   cloneElement,
   isValidElement,
@@ -11,12 +19,24 @@ import {
   type ReactNode,
   type TextareaHTMLAttributes,
 } from "react";
-import { EleSelect, type EleSelectProps } from "./EleSelect";
+import { Select as SelectImpl, type SelectProps } from "./Select";
 
-export { EleSelect } from "./EleSelect";
-export type { EleSelectOption, EleSelectProps } from "./EleSelect";
-export { EleUpload } from "./EleUpload";
-export type { EleUploadFile, EleUploadProps } from "./EleUpload";
+export type { SelectProps, SelectOption } from "./Select";
+/** @deprecated */
+export { EleSelect } from "./Select";
+export type { EleSelectOption, EleSelectProps } from "./Select";
+
+export {
+  FileUpload,
+  type FileUploadFile,
+  type FileUploadProps,
+} from "./FileUpload";
+/** @deprecated */
+export { FileUpload as EleUpload } from "./FileUpload";
+export type {
+  FileUploadFile as EleUploadFile,
+  FileUploadProps as EleUploadProps,
+} from "./FileUpload";
 
 export function Card({
   children,
@@ -85,61 +105,214 @@ export function Label({
   );
 }
 
-/** Element 风格输入框（el-input） */
+/** Ant Design Input */
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={clsx("cn-input", props.className)} />;
-}
+  const {
+    className,
+    type,
+    value,
+    defaultValue,
+    onChange,
+    disabled,
+    id,
+    name,
+    placeholder,
+    required,
+    maxLength,
+    autoComplete,
+    autoFocus,
+    onKeyDown,
+    ...rest
+  } = props;
 
-/**
- * Element 风格下拉（el-select）
- * 支持 children <option> 或 options 数组；表单可用 name + defaultValue。
- */
-export function Select(props: EleSelectProps) {
-  return <EleSelect {...props} />;
-}
+  // date/time 保留原生控件（antd DatePicker 会改 API）
+  if (type === "date" || type === "time" || type === "datetime-local") {
+    return (
+      <input
+        {...rest}
+        id={id}
+        name={name}
+        type={type}
+        className={clsx("cn-input", className)}
+        value={value as string | number | readonly string[] | undefined}
+        defaultValue={defaultValue as string | number | readonly string[] | undefined}
+        onChange={onChange}
+        disabled={disabled}
+        placeholder={placeholder}
+        required={required}
+        maxLength={maxLength}
+        autoComplete={autoComplete}
+        autoFocus={autoFocus}
+        onKeyDown={onKeyDown}
+      />
+    );
+  }
 
-/** Element 风格多行输入（el-textarea） */
-export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  if (type === "password") {
+    return (
+      <AntInput.Password
+        id={id}
+        name={name}
+        className={className}
+        value={value as string | undefined}
+        defaultValue={defaultValue as string | undefined}
+        onChange={onChange as never}
+        disabled={disabled}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        autoComplete={autoComplete}
+        autoFocus={autoFocus}
+        onKeyDown={onKeyDown as never}
+        required={required}
+      />
+    );
+  }
+
   return (
-    <textarea {...props} className={clsx("cn-input min-h-[88px]", props.className)} />
+    <AntInput
+      id={id}
+      name={name}
+      type={type}
+      className={className}
+      value={value as string | undefined}
+      defaultValue={defaultValue as string | undefined}
+      onChange={onChange as never}
+      disabled={disabled}
+      placeholder={placeholder}
+      maxLength={maxLength}
+      autoComplete={autoComplete}
+      autoFocus={autoFocus}
+      onKeyDown={onKeyDown as never}
+      required={required}
+    />
   );
 }
 
+/** Ant Design Select 包装 */
+export function Select(props: SelectProps) {
+  return <SelectImpl {...props} />;
+}
+
+/** Ant Design TextArea */
+export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const {
+    className,
+    value,
+    defaultValue,
+    onChange,
+    disabled,
+    id,
+    name,
+    placeholder,
+    required,
+    maxLength,
+    rows,
+  } = props;
+  return (
+    <AntInput.TextArea
+      id={id}
+      name={name}
+      className={className}
+      value={value as string | undefined}
+      defaultValue={defaultValue as string | undefined}
+      onChange={onChange as never}
+      disabled={disabled}
+      placeholder={placeholder}
+      required={required}
+      maxLength={maxLength}
+      rows={rows ?? 3}
+      autoSize={rows ? undefined : { minRows: 3, maxRows: 8 }}
+    />
+  );
+}
+
+/** Ant Design Button + 国风主色变体 */
 export function Button(
   props: ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: "primary" | "secondary" | "ghost";
   },
 ) {
-  const { variant = "primary", className, ...rest } = props;
-  const v =
-    variant === "primary"
-      ? "cn-btn-primary"
-      : variant === "secondary"
-        ? "cn-btn-secondary"
-        : "cn-btn-ghost";
-  return <button {...rest} className={clsx(v, className)} />;
+  const { variant = "primary", className, type, children, disabled, onClick, ...rest } =
+    props;
+  const htmlType = type === "submit" || type === "reset" ? type : "button";
+
+  if (variant === "primary") {
+    return (
+      <AntButton
+        type="primary"
+        htmlType={htmlType}
+        className={clsx("cn-antd-btn-primary", className)}
+        disabled={disabled}
+        onClick={onClick as never}
+        style={{
+          background: "linear-gradient(165deg, #c45a4c 0%, #b54a3c 48%, #8f382c 100%)",
+          borderColor: "rgba(143, 56, 44, 0.35)",
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+        }}
+        block={className?.includes("w-full")}
+      >
+        {children}
+      </AntButton>
+    );
+  }
+
+  if (variant === "secondary") {
+    return (
+      <AntButton
+        htmlType={htmlType}
+        className={className}
+        disabled={disabled}
+        onClick={onClick as never}
+        block={className?.includes("w-full")}
+      >
+        {children}
+      </AntButton>
+    );
+  }
+
+  return (
+    <AntButton
+      type="text"
+      htmlType={htmlType}
+      className={className}
+      disabled={disabled}
+      onClick={onClick as never}
+      block={className?.includes("w-full")}
+      {...(rest as object)}
+    >
+      {children}
+    </AntButton>
+  );
 }
 
-/** 筛选/维度芯片（统一 cn-chip） */
+/** 可切换芯片：antd CheckableTag */
 export function Chip({
   active,
   children,
   className,
   type = "button",
+  onClick,
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
   return (
-    <button
-      type={type}
+    <Tag.CheckableTag
+      checked={Boolean(active)}
+      onChange={() => {
+        // CheckableTag 用 onChange(boolean)；映射到 button click
+        onClick?.({} as never);
+      }}
       className={clsx(
-        active ? "cn-chip cn-chip-on" : "cn-chip cn-chip-off",
+        "!m-0 !rounded-[0.3rem] !px-3 !py-1.5 !text-xs !font-semibold !tracking-wide",
+        active
+          ? "!border !border-daiqing/30 !bg-daiqing !text-white"
+          : "!border !border-daiqing/15 !bg-porcelain-card !text-muted",
         className,
       )}
-      aria-pressed={active}
-      {...rest}
+      {...(rest as object)}
     >
       {children}
-    </button>
+    </Tag.CheckableTag>
   );
 }
 
@@ -152,7 +325,6 @@ export function Field({
   label: string;
   children: ReactNode;
   hint?: string;
-  /** 显式指定关联控件 id；省略时自动注入 */
   htmlFor?: string;
 }) {
   const autoId = useId();
@@ -209,7 +381,6 @@ export function Alert({
   );
 }
 
-/** 实心朱印品牌标 */
 export function BrandMark({
   children = "妙",
   className,
@@ -222,7 +393,6 @@ export function BrandMark({
   );
 }
 
-/** 空心双框朱砂印章 */
 export function Seal({
   children,
   className,
@@ -253,7 +423,6 @@ export function StepPill({ n, label }: { n: string; label: string }) {
   );
 }
 
-/** 区块小标题：朱砂眉批 + 宋体主标 */
 export function SectionLead({
   eyebrow,
   title,

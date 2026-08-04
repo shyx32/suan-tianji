@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Serif_SC } from "next/font/google";
+import { AntdProvider } from "@/components/AntdProvider";
 import "./globals.css";
 
 const song = Noto_Serif_SC({
@@ -22,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className={`h-full antialiased ${song.variable}`}>
       <body className="min-h-full bg-porcelain font-sans text-ink antialiased">
-        {children}
+        <AntdProvider>{children}</AntdProvider>
       </body>
     </html>
   );

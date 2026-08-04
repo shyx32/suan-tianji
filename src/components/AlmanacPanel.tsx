@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { clsx } from "clsx";
 import { CloudMotif, Taiji, TrigramGlyph, WuxingDots } from "./Ornaments";
+import { QianFullscreen, type QianPhase } from "./QianDraw";
 import { Button, Card, CardBody, Seal } from "./ui";
 
 interface Almanac {
@@ -50,6 +51,16 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
   const [almanac, setAlmanac] = useState<Almanac | null>(null);
   const [fortune, setFortune] = useState<FortuneState | null>(null);
   const [salt, setSalt] = useState(0);
+  const [phase, setPhase] = useState<QianPhase>("idle");
+  const [resultKey, setResultKey] = useState(0);
+  const timers = useRef<number[]>([]);
+
+  const clearTimers = useCallback(() => {
+    timers.current.forEach((t) => window.clearTimeout(t));
+    timers.current = [];
+  }, []);
+
+  useEffect(() => () => clearTimers(), [clearTimers]);
 
   const load = useCallback(async (s: number) => {
     const res = await fetch(`/api/almanac?salt=${s}`, { cache: "no-store" });
@@ -72,6 +83,52 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
   useEffect(() => {
     void load(0);
   }, [load]);
+
+  const prefersReducedMotion = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
+
+  async function drawQian() {
+    if (phase === "shaking" || phase === "drawn") return;
+    clearTimers();
+
+    const next = salt + 1;
+    setSalt(next);
+
+    if (prefersReducedMotion()) {
+      await load(next);
+      setPhase("reveal");
+      setResultKey((k) => k + 1);
+      return;
+    }
+
+    setPhase("shaking");
+    const fetchPromise = load(next);
+
+    timers.current.push(
+      window.setTimeout(() => {
+        setPhase("drawn");
+      }, 1200),
+    );
+    timers.current.push(
+      window.setTimeout(() => {
+        void fetchPromise.finally(() => {
+          setPhase("reveal");
+          setResultKey((k) => k + 1);
+        });
+      }, 1900),
+    );
+  }
+
+  function closeQian() {
+    clearTimers();
+    setPhase("idle");
+  }
+
+  const drawing = phase === "shaking" || phase === "drawn" || phase === "reveal";
+  const tipLabel =
+    fortune?.level?.replace("签", "") || fortune?.title?.slice(0, 2) || "签";
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 sm:gap-4">
@@ -212,7 +269,7 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
                   <div className="font-song font-bold tracking-[0.1em] text-daiqing">
                     今日签文
                   </div>
-                  {fortune?.level ? (
+                  {fortune?.level && !drawing ? (
                     <span className="rounded-seal border border-rose/30 bg-rose/10 px-1.5 py-0.5 font-song text-[10px] font-bold tracking-[0.14em] text-rose">
                       {fortune.level}签
                     </span>
@@ -226,63 +283,77 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
               </div>
             </div>
 
-            <p
+            {/* 全屏摇签层 */}
+            <QianFullscreen
+              open={drawing}
+              phase={phase}
+              label={tipLabel}
+              result={fortune}
+              onClose={closeQian}
+            />
+
+            <div
+              key={resultKey}
               className={clsx(
-                "relative mt-4 font-kai font-semibold leading-relaxed tracking-wide text-daiqing",
-                compact ? "text-base sm:text-lg lg:text-xl" : "text-lg",
+                "qian-result relative mt-4 flex flex-1 flex-col",
+                phase === "idle" && resultKey > 0 && "is-enter",
               )}
             >
-              {fortune?.qian || "…"}
-            </p>
-            <p className="relative mt-1.5 text-sm leading-relaxed text-muted">
-              {fortune?.text || "…"}
-            </p>
-
-            {/* 签意 / 宜行 / 心法 —— 填满右侧空白 */}
-            <div className="relative mt-3 flex flex-1 flex-col gap-2">
-              <div className="rounded-paper border border-daiqing/10 bg-porcelain/90 px-3 py-2.5">
-                <div className="font-song text-[11px] font-bold tracking-[0.16em] text-daiqing/70">
-                  签意
-                </div>
-                <p className="mt-1 text-xs leading-relaxed text-ink-2 sm:text-[13px]">
-                  {fortune?.meaning ||
-                    "签文为文化趣味提示，结合自身处境细读即可，不必拘泥字面。"}
-                </p>
-              </div>
-              <div className="rounded-paper border border-sage/15 bg-sage/5 px-3 py-2.5">
-                <div className="font-song text-[11px] font-bold tracking-[0.16em] text-sage">
-                  今日宜行
-                </div>
-                <p className="mt-1 text-xs leading-relaxed text-ink-2 sm:text-[13px]">
-                  {fortune?.advice || "宜静心安排日程，重要事写下来再行动。"}
-                </p>
-              </div>
-              <div className="rounded-paper border border-rose/12 bg-rose/5 px-3 py-2">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="font-song text-[11px] font-bold tracking-[0.16em] text-rose">
-                    心法
-                  </span>
-                  <span className="font-kai text-sm font-semibold tracking-wide text-daiqing">
-                    {fortune?.tip || "心有所问，签有所答。"}
-                  </span>
-                </div>
-              </div>
-              <p className="text-[11px] leading-relaxed text-faint">
-                心有所问，签有所答。若连摇数签，宜取最先触动你的一句；仅供文化娱乐，不作专业决断依据。
+              <p
+                className={clsx(
+                  "font-kai font-semibold leading-relaxed tracking-wide text-daiqing",
+                  compact ? "text-base sm:text-lg lg:text-xl" : "text-lg",
+                )}
+              >
+                {fortune?.qian || "…"}
               </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                {fortune?.text || "…"}
+              </p>
+
+              <div className="mt-3 flex flex-1 flex-col gap-2">
+                <div className="rounded-paper border border-daiqing/10 bg-porcelain/90 px-3 py-2.5">
+                  <div className="font-song text-[11px] font-bold tracking-[0.16em] text-daiqing/70">
+                    签意
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-ink-2 sm:text-[13px]">
+                    {fortune?.meaning ||
+                      "签文为文化趣味提示，结合自身处境细读即可，不必拘泥字面。"}
+                  </p>
+                </div>
+                <div className="rounded-paper border border-sage/15 bg-sage/5 px-3 py-2.5">
+                  <div className="font-song text-[11px] font-bold tracking-[0.16em] text-sage">
+                    今日宜行
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-ink-2 sm:text-[13px]">
+                    {fortune?.advice || "宜静心安排日程，重要事写下来再行动。"}
+                  </p>
+                </div>
+                <div className="rounded-paper border border-rose/12 bg-rose/5 px-3 py-2">
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="font-song text-[11px] font-bold tracking-[0.16em] text-rose">
+                      心法
+                    </span>
+                    <span className="font-kai text-sm font-semibold tracking-wide text-daiqing">
+                      {fortune?.tip || "心有所问，签有所答。"}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-[11px] leading-relaxed text-faint">
+                  心有所问，签有所答。若连摇数签，宜取最先触动你的一句；仅供文化娱乐，不作专业决断依据。
+                </p>
+              </div>
             </div>
 
             <Button
               variant="secondary"
               className="relative mt-3 w-full sm:mt-4"
               type="button"
-              onClick={() => {
-                const next = salt + 1;
-                setSalt(next);
-                void load(next);
-              }}
+              disabled={phase === "shaking" || phase === "drawn"}
+              aria-busy={phase === "shaking" || phase === "drawn"}
+              onClick={() => void drawQian()}
             >
-              再摇一签
+              {phase === "shaking" || phase === "drawn" ? "摇签中…" : "再摇一签"}
             </Button>
           </CardBody>
         </Card>
