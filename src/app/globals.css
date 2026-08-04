@@ -69,7 +69,7 @@ body {
   }
 }
 
-/* —— 整屏滚动布局 —— */
+/* —— 整屏滚动布局（桌面） —— */
 .cn-snap-root {
   height: 100dvh;
   overflow-x: hidden;
@@ -88,6 +88,101 @@ body {
   scroll-snap-stop: always;
   display: flex;
   flex-direction: column;
+}
+
+/* —— 手机：取消分屏吸附，改为整页切换 + 自然滚动 —— */
+.cn-mobile-root {
+  position: relative;
+  min-height: 100dvh;
+  min-height: 100svh;
+  overflow-x: hidden;
+  /* 文档流滚动，无 snap，避免嵌套滚动陷阱 */
+}
+
+.cn-mobile-page {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100dvh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.cn-mobile-inner {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 3.65rem)
+    0.9rem
+    calc(env(safe-area-inset-bottom, 0px) + 5.25rem);
+}
+
+.cn-mobile-tabs {
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 3.15rem);
+  z-index: 30;
+  background: rgba(255, 252, 247, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.cn-mobile-tabs-scroller {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 1px;
+}
+
+.cn-mobile-tabs-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .cn-section-dots {
+    display: none !important;
+  }
+
+  .cn-scroll-hint {
+    display: none !important;
+  }
+
+  /* 手机表单：避免内部再锁高度导致点不到提交 */
+  .cn-mobile-page .cn-screen-scroll,
+  .cn-mobile-page .cn-fill-body {
+    overflow: visible !important;
+    min-height: 0 !important;
+    flex: none !important;
+  }
+
+  .cn-mobile-hide-tight {
+    display: none !important;
+  }
+
+  /* antd 在窄屏全宽更稳 */
+  .cn-mobile-page .ant-select,
+  .cn-mobile-page .ant-input,
+  .cn-mobile-page .ant-input-affix-wrapper,
+  .cn-mobile-page .ant-btn {
+    max-width: 100%;
+  }
+
+  .cn-mobile-page .ant-btn {
+    height: auto;
+    min-height: 2.5rem;
+    white-space: normal;
+  }
+}
+
+@media (min-width: 768px) {
+  .cn-mobile-root {
+    /* 不应在桌面使用；若误用则退回普通流 */
+    min-height: 100%;
+  }
 }
 
 .cn-screen-inner {
@@ -2203,9 +2298,14 @@ textarea.cn-input {
 
 .cn-bottom-nav {
   border-top: 1px solid var(--line);
-  background: rgba(255, 252, 247, 0.94);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 252, 247, 0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 -8px 24px -16px rgba(15, 39, 64, 0.25);
+}
+
+.cn-app-header {
+  /* 手机顶栏更实，避免内容透出难点 */
 }
 
 /* 上传组件对齐主题 */
