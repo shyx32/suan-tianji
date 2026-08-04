@@ -55,6 +55,35 @@ CREATE TABLE IF NOT EXISTS stats_daily (
   visits       int NOT NULL DEFAULT 0,
   calculated   int NOT NULL DEFAULT 0
 );
+
+-- 会话最近访问信息（明文，供后台查看）
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_ip text;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_ua text;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_path text;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS visit_count int NOT NULL DEFAULT 0;
+
+-- 访问记录明细
+CREATE TABLE IF NOT EXISTS visit_logs (
+  id               uuid PRIMARY KEY,
+  session_id       uuid REFERENCES sessions(id) ON DELETE SET NULL,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  ip               text,
+  user_agent       text,
+  referer          text,
+  path             text,
+  method           text,
+  accept_language  text,
+  country          text
+);
+
+CREATE INDEX IF NOT EXISTS visit_logs_created_idx
+  ON visit_logs (created_at DESC);
+
+CREATE INDEX IF NOT EXISTS visit_logs_session_created_idx
+  ON visit_logs (session_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS visit_logs_ip_created_idx
+  ON visit_logs (ip, created_at DESC);
 `;
 
 async function main() {

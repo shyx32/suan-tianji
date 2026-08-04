@@ -278,6 +278,7 @@ export async function listAdminSessions(page = 1, pageSize = 20) {
   const count = await query(`SELECT COUNT(*)::int AS c FROM sessions`);
   const res = await query(
     `SELECT s.id, s.created_at, s.last_seen_at,
+            s.last_ip, s.last_ua, s.last_path, s.visit_count,
             COUNT(r.id)::int AS readings
      FROM sessions s
      LEFT JOIN readings r ON r.session_id = s.id
@@ -295,6 +296,68 @@ export async function listAdminSessions(page = 1, pageSize = 20) {
       createdAt: new Date(r.created_at as string).toISOString(),
       lastSeenAt: new Date(r.last_seen_at as string).toISOString(),
       readings: Number(r.readings) || 0,
+      lastIp: (r.last_ip as string) || null,
+      lastUa: (r.last_ua as string) || null,
+      lastPath: (r.last_path as string) || null,
+      visitCount: Number(r.visit_count) || 0,
+    })),
+  };
+}
+
+export async function listAdminVisits(
+  page = 1,
+  pageSize = 20,
+  opts?: { q?: string; sessionId?: string },
+) {
+  const p = Math.max(1, page);
+  const size = Math.min(100, Math.max(1, pageSize));
+  const offset = (p - 1) * size;
+  const q = (opts?.q || "").trim();
+  const sessionId = (opts?.sessionId || "").trim();
+
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (sessionId) {
+    params.push(sessionId);
+    where.push(`session_id = $${params.length}::uuid`);
+  }
+  if (q) {
+    params.push(`%${q}%`);
+    const i = params.length;
+    where.push(
+      `(ip ILIKE $${i} OR user_agent ILIKE $${i} OR path ILIKE $${i} OR referer ILIKE $${i} OR country ILIKE $${i})`,
+    );
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const count = await query(
+    `SELECT COUNT(*)::int AS c FROM visit_logs ${whereSql}`,
+    params,
+  );
+  params.push(size, offset);
+  const res = await query(
+    `SELECT id, session_id, created_at, ip, user_agent, referer, path, method, accept_language, country
+     FROM visit_logs
+     ${whereSql}
+     ORDER BY created_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params,
+  );
+  return {
+    total: Number(count.rows[0]?.c) || 0,
+    page: p,
+    pageSize: size,
+    records: res.rows.map((r) => ({
+      id: String(r.id),
+      sessionId: r.session_id ? String(r.session_id) : null,
+      createdAt: new Date(r.created_at as string).toISOString(),
+      ip: (r.ip as string) || null,
+      userAgent: (r.user_agent as string) || null,
+      referer: (r.referer as string) || null,
+      path: (r.path as string) || null,
+      method: (r.method as string) || null,
+      acceptLanguage: (r.accept_language as string) || null,
+      country: (r.country as string) || null,
     })),
   };
 }

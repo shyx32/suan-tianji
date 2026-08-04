@@ -125,7 +125,7 @@ export function HistoryPanel({ refreshKey }: { refreshKey: number }) {
             records.map((r) => (
               <div
                 key={r.id}
-                className="flex flex-col gap-2 rounded-2xl border border-daiqing/8 bg-porcelain px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 rounded-paper border border-daiqing/10 bg-porcelain px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">

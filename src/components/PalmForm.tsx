@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { readJson } from "@/lib/api-client";
-import { EleUpload } from "./EleUpload";
 import { MarkdownReport } from "./MarkdownReport";
-import { Alert, Button, Card, CardBody, CardHeader, Field, Input } from "./ui";
+import { Alert, Button, Card, CardBody, CardHeader, EleUpload, Field, Input } from "./ui";
 
 export function PalmForm({ onSaved }: { onSaved?: () => void }) {
   const [file, setFile] = useState<File | null>(null);
@@ -40,7 +39,7 @@ export function PalmForm({ onSaved }: { onSaved?: () => void }) {
     <div className="space-y-6">
       <Card>
         <CardHeader
-          eyebrow="VISION"
+          eyebrow="手相观掌"
           title="手相观掌"
           subtitle="使用 Element 风格上传组件（picture-card）。请上传清晰手掌照片，掌心朝上、光线充足。"
         />

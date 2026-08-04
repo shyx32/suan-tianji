@@ -23,8 +23,57 @@ export interface ReadingRepo {
 }
 
 export interface SessionRepo {
-  ensure(sessionId: string, meta?: { uaHash?: string; ipHash?: string }): Promise<void>;
+  ensure(
+    sessionId: string,
+    meta?: {
+      uaHash?: string;
+      ipHash?: string;
+      lastIp?: string | null;
+      lastUa?: string | null;
+      lastPath?: string | null;
+    },
+  ): Promise<void>;
   touch(sessionId: string): Promise<void>;
+  /** 会话访问计数 +1，并刷新最近 IP/UA/路径 */
+  recordAccess?(
+    sessionId: string,
+    meta: {
+      ip?: string | null;
+      userAgent?: string | null;
+      path?: string | null;
+      uaHash?: string | null;
+      ipHash?: string | null;
+    },
+  ): Promise<void>;
+}
+
+export interface VisitLogInput {
+  id: string;
+  sessionId?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  referer?: string | null;
+  path?: string | null;
+  method?: string | null;
+  acceptLanguage?: string | null;
+  country?: string | null;
+}
+
+export interface VisitLogRow {
+  id: string;
+  sessionId: string | null;
+  createdAt: string;
+  ip: string | null;
+  userAgent: string | null;
+  referer: string | null;
+  path: string | null;
+  method: string | null;
+  acceptLanguage: string | null;
+  country: string | null;
+}
+
+export interface VisitRepo {
+  create(input: VisitLogInput): Promise<void>;
 }
 
 export interface StatsRepo {
@@ -64,6 +113,7 @@ export interface AppRuntime {
   sessions: SessionRepo;
   readings: ReadingRepo;
   stats: StatsRepo;
+  visits: VisitRepo;
   storage: ObjectStorage;
   queue: JobQueue;
   rateLimiter: RateLimiter;

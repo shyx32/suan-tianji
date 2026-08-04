@@ -1,6 +1,6 @@
 import type { AppRuntime } from "@/ports";
 import { createHttpLlmProvider } from "@/adapters/llm/http-provider";
-import { readingRepo, sessionRepo, statsRepo } from "./repos";
+import { readingRepo, sessionRepo, statsRepo, visitRepo } from "./repos";
 import { createS3Storage } from "./storage";
 import { createPgJobQueue } from "./queue";
 import { createMemoryRateLimiter } from "./rate-limit";
@@ -16,6 +16,7 @@ export function createNodeRuntime(): AppRuntime {
     sessions: sessionRepo,
     readings: readingRepo,
     stats: statsRepo,
+    visits: visitRepo,
     storage: createS3Storage(),
     queue: createPgJobQueue(async (id) => {
       await processReadingById(runtime, id);

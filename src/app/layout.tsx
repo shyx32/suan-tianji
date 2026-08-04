@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
+import { Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
+
+const song = Noto_Serif_SC({
+  weight: ["400", "600", "700", "900"],
+  subsets: ["latin"],
+  variable: "--font-song",
+  display: "swap",
+  preload: true,
+});
 
 export const metadata: Metadata = {
   title: "妙算天机 · 云机一测",
@@ -11,8 +20,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN" className="h-full antialiased">
-      <body className="min-h-full bg-porcelain text-ink antialiased">{children}</body>
+    <html lang="zh-CN" className={`h-full antialiased ${song.variable}`}>
+      <body className="min-h-full bg-porcelain font-sans text-ink antialiased">
+        {children}
+      </body>
     </html>
   );
 }

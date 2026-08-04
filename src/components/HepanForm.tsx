@@ -8,8 +8,8 @@ import { Alert, Button, Card, CardBody, CardHeader, Field, Input, Select } from 
 
 function PersonFields({ prefix, label }: { prefix: string; label: string }) {
   return (
-    <div className="rounded-2xl border border-daiqing/10 bg-porcelain p-4">
-      <div className="mb-3 text-sm font-bold tracking-[0.08em] text-daiqing">
+    <div className="rounded-paper border border-daiqing/10 bg-porcelain p-4">
+      <div className="mb-3 font-song text-sm font-bold tracking-[0.12em] text-daiqing">
         {label}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -109,7 +109,7 @@ export function HepanForm({ onSaved }: { onSaved?: () => void }) {
     <div className="space-y-6">
       <Card>
         <CardHeader
-          eyebrow="COMPAT"
+          eyebrow="双盘合参"
           title="双盘合参"
           subtitle="输入甲乙双方生辰，先得结构关系提示，再生成缘分解读。"
         />
@@ -131,23 +131,23 @@ export function HepanForm({ onSaved }: { onSaved?: () => void }) {
 
       {hepan ? (
         <Card>
-          <CardHeader eyebrow="MATRIX" title="合盘结构" subtitle={hepan.summary} />
+          <CardHeader eyebrow="合盘结构" title="双盘对照" subtitle={hepan.summary} />
           <CardBody className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-daiqing/10 bg-porcelain p-3">
-              <div className="text-xs text-faint">甲盘四柱</div>
-              <div className="mt-1 text-lg font-bold tracking-wider text-daiqing">
+            <div className="rounded-paper border border-daiqing/10 bg-porcelain p-3">
+              <div className="text-xs tracking-wide text-faint">甲盘四柱</div>
+              <div className="mt-1 font-song text-lg font-bold tracking-wider text-daiqing">
                 {hepan.personA.year.ganZhi} {hepan.personA.month.ganZhi}{" "}
                 {hepan.personA.day.ganZhi} {hepan.personA.time.ganZhi}
               </div>
             </div>
-            <div className="rounded-2xl border border-daiqing/10 bg-porcelain p-3">
-              <div className="text-xs text-faint">乙盘四柱</div>
-              <div className="mt-1 text-lg font-bold tracking-wider text-daiqing">
+            <div className="rounded-paper border border-daiqing/10 bg-porcelain p-3">
+              <div className="text-xs tracking-wide text-faint">乙盘四柱</div>
+              <div className="mt-1 font-song text-lg font-bold tracking-wider text-daiqing">
                 {hepan.personB.year.ganZhi} {hepan.personB.month.ganZhi}{" "}
                 {hepan.personB.day.ganZhi} {hepan.personB.time.ganZhi}
               </div>
             </div>
-            <div className="sm:col-span-2 rounded-2xl border border-rose/15 bg-rose/5 px-3 py-2 text-sm text-ink-2">
+            <div className="sm:col-span-2 rounded-paper border border-rose/15 bg-rose/5 px-3 py-2 text-sm text-ink-2">
               缘分指数约{" "}
               <strong className="text-rose">{hepan.relationCounts.scoreHint}</strong> ·
               合冲：{hepan.relationCounts.zhiRelations.join("、") || "平和"}
