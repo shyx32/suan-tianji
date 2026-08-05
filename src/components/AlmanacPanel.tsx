@@ -47,7 +47,7 @@ type FortuneState = {
   tip?: string;
 };
 
-export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
+export function AlmanacPanel() {
   const [almanac, setAlmanac] = useState<Almanac | null>(null);
   const [fortune, setFortune] = useState<FortuneState | null>(null);
   const [salt, setSalt] = useState(0);
@@ -131,20 +131,10 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
     fortune?.level?.replace("签", "") || fortune?.title?.slice(0, 2) || "签";
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 sm:gap-4">
-      <div
-        className={clsx(
-          "grid flex-1 gap-3 sm:gap-4",
-          "md:grid-cols-2 md:items-stretch",
-        )}
-      >
-        <Card className="flex h-full flex-col">
-          <CardBody
-            className={clsx(
-              "relative flex h-full flex-col overflow-hidden",
-              compact && "px-4 py-4 sm:px-5",
-            )}
-          >
+    <div className="flex flex-col gap-4 sm:gap-5">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
+        <Card>
+          <CardBody className="relative overflow-hidden px-4 py-4 sm:px-5 sm:py-5">
             <CloudMotif className="pointer-events-none absolute -right-2 top-2 h-12 w-32 text-daiqing/10" />
             <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -158,12 +148,7 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
               <Seal className="h-8 min-w-8 text-[10px]">日</Seal>
             </div>
 
-            <div
-              className={clsx(
-                "cn-tabular relative mt-2 font-song font-extrabold tracking-tight text-daiqing",
-                compact ? "text-2xl sm:text-3xl lg:text-4xl" : "text-3xl sm:text-4xl",
-              )}
-            >
+            <div className="cn-tabular relative mt-2 font-song text-3xl font-extrabold tracking-tight text-daiqing sm:text-4xl">
               {almanac?.solar ?? "— — —"}
             </div>
             <div className="relative mt-2 flex flex-wrap gap-2 text-sm text-muted">
@@ -201,7 +186,7 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
               <Taiji className="h-4 w-4 shrink-0 text-daiqing/40" />
             </div>
 
-            <div className="grid flex-1 gap-2.5 sm:grid-cols-2">
+            <div className="mt-1 grid gap-2.5 sm:grid-cols-2">
               <div className="rounded-paper border border-sage/20 bg-sage/5 p-2.5 sm:p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-song text-xs font-bold tracking-[0.16em] text-sage">
@@ -240,7 +225,7 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
               </div>
             </div>
 
-            <div className="relative mt-3 hidden border-t border-daiqing/8 pt-3 sm:block">
+            <div className="relative mt-4 border-t border-daiqing/8 pt-3">
               <WuxingDots />
               <p className="mt-2 text-[11px] leading-relaxed text-faint">
                 通书内容综合农历与民俗条目生成，侧重文化趣味，不作专业术数结论。
@@ -249,13 +234,8 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
           </CardBody>
         </Card>
 
-        <Card className="flex h-full flex-col border-rose/20">
-          <CardBody
-            className={clsx(
-              "cn-corner-frame relative flex h-full flex-col overflow-hidden",
-              compact && "px-4 py-4 sm:px-5",
-            )}
-          >
+        <Card className="border-rose/20">
+          <CardBody className="cn-corner-frame relative overflow-hidden px-4 py-4 sm:px-5 sm:py-5">
             <div
               className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 text-rose/10"
               aria-hidden
@@ -295,23 +275,18 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
             <div
               key={resultKey}
               className={clsx(
-                "qian-result relative mt-4 flex flex-1 flex-col",
+                "qian-result relative mt-4 flex flex-col",
                 phase === "idle" && resultKey > 0 && "is-enter",
               )}
             >
-              <p
-                className={clsx(
-                  "font-kai font-semibold leading-relaxed tracking-wide text-daiqing",
-                  compact ? "text-base sm:text-lg lg:text-xl" : "text-lg",
-                )}
-              >
+              <p className="font-kai text-lg font-semibold leading-relaxed tracking-wide text-daiqing">
                 {fortune?.qian || "…"}
               </p>
               <p className="mt-1.5 text-sm leading-relaxed text-muted">
                 {fortune?.text || "…"}
               </p>
 
-              <div className="mt-3 flex flex-1 flex-col gap-2">
+              <div className="mt-3 flex flex-col gap-2">
                 <div className="rounded-paper border border-daiqing/10 bg-porcelain/90 px-3 py-2.5">
                   <div className="font-song text-[11px] font-bold tracking-[0.16em] text-daiqing/70">
                     签意
@@ -359,8 +334,7 @@ export function AlmanacPanel({ compact = false }: { compact?: boolean }) {
         </Card>
       </div>
 
-      {/* 底部贴士：撑满通书屏 */}
-      <div className="cn-tile-grid cn-tile-grid-4 shrink-0">
+      <div className="cn-tile-grid cn-tile-grid-4">
         {TIPS.map((t) => (
           <div key={t.title} className="cn-tile">
             <div className="cn-tile-title">{t.title}</div>

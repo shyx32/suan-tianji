@@ -113,7 +113,7 @@ export function SiteFooter({ embedded = false }: { embedded?: boolean }) {
       className={clsx(
         "relative overflow-hidden",
         embedded
-          ? "flex h-full min-h-0 flex-col rounded-paper border border-daiqing/10 bg-porcelain-card px-3 py-4 shadow-card sm:px-5 sm:py-5 lg:px-6 lg:py-6"
+          ? "rounded-paper border border-daiqing/10 bg-porcelain-card px-3 py-4 shadow-card sm:px-5 sm:py-5 lg:px-6 lg:py-6"
           : "border-t border-daiqing/10 bg-porcelain-card px-4 py-10 sm:px-6",
       )}
     >
@@ -133,7 +133,7 @@ export function SiteFooter({ embedded = false }: { embedded?: boolean }) {
 
       <div
         className={clsx(
-          "relative flex min-h-0 flex-1 flex-col gap-4 sm:gap-5",
+          "relative flex flex-col gap-4 sm:gap-5",
           embedded ? "" : "mx-auto max-w-6xl",
         )}
       >
@@ -185,15 +185,15 @@ export function SiteFooter({ embedded = false }: { embedded?: boolean }) {
         ) : null}
 
         {/* 服务 + FAQ 双列撑满 */}
-        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2 lg:gap-4">
-          <div className="flex min-h-0 flex-col rounded-paper border border-daiqing/10 bg-porcelain/70 p-3 sm:p-4">
+        <div className="grid gap-3 lg:grid-cols-2 lg:gap-4">
+          <div className="rounded-paper border border-daiqing/10 bg-porcelain/70 p-3 sm:p-4">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="font-song text-sm font-bold tracking-[0.12em] text-daiqing">
                 可测服务
               </h3>
               <span className="text-[10px] tracking-widest text-faint">四象</span>
             </div>
-            <div className="grid flex-1 gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               {SERVICES.map((s) => (
                 <div
                   key={s.title}
@@ -213,14 +213,14 @@ export function SiteFooter({ embedded = false }: { embedded?: boolean }) {
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-col rounded-paper border border-daiqing/10 bg-porcelain/70 p-3 sm:p-4">
+          <div className="rounded-paper border border-daiqing/10 bg-porcelain/70 p-3 sm:p-4">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="font-song text-sm font-bold tracking-[0.12em] text-daiqing">
                 常见问答
               </h3>
               <span className="text-[10px] tracking-widest text-faint">FAQ</span>
             </div>
-            <div className="grid flex-1 gap-2">
+            <div className="grid gap-2">
               {FAQS.map((f) => (
                 <div
                   key={f.q}
@@ -262,7 +262,7 @@ export function SiteFooter({ embedded = false }: { embedded?: boolean }) {
             免责声明：测算结果由规则引擎与 AI 生成，不构成医疗、投资、婚恋、法律等专业建议；请勿据此做出重大决定。
           </p>
           <p className="text-[11px] text-faint">
-            © {new Date().getFullYear()} 妙算天机 · UI v3.4 整屏分章 · Postgres
+            © {new Date().getFullYear()} 妙算天机 · UI v3.7 路由分页 · Postgres
             {" · "}
             <Link
               href="/admin"

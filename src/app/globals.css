@@ -24,11 +24,9 @@
 
 html {
   scroll-behavior: smooth;
-  height: 100%;
 }
 
 body {
-  height: 100%;
   min-height: 100%;
   color: var(--text);
   background-color: var(--bg);
@@ -63,74 +61,96 @@ body {
   .cn-bounce-soft {
     animation: none !important;
   }
+}
 
-  .cn-snap-root {
-    scroll-behavior: auto;
+/* —— App Shell：自然文档流 —— */
+.cn-shell {
+  position: relative;
+  overflow-x: clip;
+}
+
+.cn-shell-main {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 3.75rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+}
+
+@media (min-width: 768px) {
+  .cn-shell-main {
+    padding-bottom: 2.5rem;
   }
 }
 
-/* —— 整屏滚动布局（桌面） —— */
-.cn-snap-root {
-  height: 100dvh;
-  overflow-x: hidden;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
-  overscroll-behavior-y: contain;
-}
-
-.cn-screen {
-  position: relative;
-  box-sizing: border-box;
-  min-height: 100dvh;
-  min-height: 100svh;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  display: flex;
-  flex-direction: column;
-}
-
-/* —— 手机：取消分屏吸附，改为整页切换 + 自然滚动 —— */
-.cn-mobile-root {
-  position: relative;
-  min-height: 100dvh;
-  min-height: 100svh;
-  overflow-x: hidden;
-  /* 文档流滚动，无 snap，避免嵌套滚动陷阱 */
-}
-
-.cn-mobile-page {
-  position: relative;
-  box-sizing: border-box;
-  min-height: 100dvh;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-}
-
-.cn-mobile-inner {
-  flex: 1 1 auto;
+.cn-container {
   width: 100%;
   max-width: 72rem;
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
-  padding:
-    calc(env(safe-area-inset-top, 0px) + 3.65rem)
-    0.9rem
-    calc(env(safe-area-inset-bottom, 0px) + 5.25rem);
+  padding-left: max(0.95rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.95rem, env(safe-area-inset-right, 0px));
 }
 
-.cn-mobile-tabs {
+@media (min-width: 640px) {
+  .cn-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.cn-section {
+  position: relative;
+  padding-top: 1.75rem;
+  padding-bottom: 1.75rem;
+  scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 4.5rem);
+}
+
+@media (min-width: 640px) {
+  .cn-section {
+    padding-top: 2.25rem;
+    padding-bottom: 2.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .cn-section {
+    padding-top: 2.75rem;
+    padding-bottom: 2.75rem;
+  }
+}
+
+.cn-section-service {
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+.cn-section-hero {
+  padding-top: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .cn-section-hero {
+    padding-top: 2rem;
+  }
+}
+
+.cn-section-band {
+  background:
+    linear-gradient(180deg, rgba(26, 58, 82, 0.03), transparent 28%),
+    linear-gradient(0deg, rgba(181, 74, 60, 0.025), transparent 22%),
+    rgba(255, 252, 247, 0.35);
+  border-block: 1px solid rgba(26, 58, 82, 0.06);
+}
+
+.cn-workspace-tabs {
   position: sticky;
-  top: calc(env(safe-area-inset-top, 0px) + 3.15rem);
+  top: calc(env(safe-area-inset-top, 0px) + 3.75rem);
   z-index: 30;
   background: rgba(255, 252, 247, 0.96);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
-.cn-mobile-tabs-scroller {
+.cn-workspace-tabs-scroller {
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -138,116 +158,13 @@ body {
   padding-bottom: 1px;
 }
 
-.cn-mobile-tabs-scroller::-webkit-scrollbar {
+.cn-workspace-tabs-scroller::-webkit-scrollbar {
   display: none;
 }
 
-@media (max-width: 767px) {
-  .cn-section-dots {
-    display: none !important;
-  }
-
-  .cn-scroll-hint {
-    display: none !important;
-  }
-
-  /* 手机表单：避免内部再锁高度导致点不到提交 */
-  .cn-mobile-page .cn-screen-scroll,
-  .cn-mobile-page .cn-fill-body {
-    overflow: visible !important;
-    min-height: 0 !important;
-    flex: none !important;
-  }
-
-  .cn-mobile-hide-tight {
-    display: none !important;
-  }
-
-  /* antd 在窄屏全宽更稳 */
-  .cn-mobile-page .ant-select,
-  .cn-mobile-page .ant-input,
-  .cn-mobile-page .ant-input-affix-wrapper,
-  .cn-mobile-page .ant-btn {
-    max-width: 100%;
-  }
-
-  .cn-mobile-page .ant-btn {
-    height: auto;
-    min-height: 2.5rem;
-    white-space: normal;
-  }
-}
-
-@media (min-width: 768px) {
-  .cn-mobile-root {
-    /* 不应在桌面使用；若误用则退回普通流 */
-    min-height: 100%;
-  }
-}
-
-.cn-screen-inner {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  width: 100%;
-  max-width: 72rem; /* max-w-6xl */
-  margin-left: auto;
-  margin-right: auto;
-  /* 顶栏 + 底栏安全区；两侧给圆点留白 */
-  padding:
-    max(4.25rem, calc(env(safe-area-inset-top, 0px) + 3.5rem))
-    max(1rem, calc(env(safe-area-inset-right, 0px) + 0.75rem))
-    max(4.5rem, calc(env(safe-area-inset-bottom, 0px) + 3.75rem))
-    max(1rem, env(safe-area-inset-left, 0px));
-}
-
-@media (min-width: 640px) {
-  .cn-screen-inner {
-    padding-left: 1.5rem;
-    padding-right: 1.75rem;
-    padding-top: max(5rem, calc(env(safe-area-inset-top, 0px) + 4rem));
-    padding-bottom: max(1.75rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem));
-  }
-}
-
-@media (min-width: 768px) {
-  .cn-screen-inner {
-    padding-right: 2.25rem; /* 右侧圆点 */
-    padding-bottom: 1.75rem;
-  }
-}
-
-/* 屏内可滚动内容（表单/结果可能超高） */
-.cn-screen-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 0.35rem;
-}
-
-/* 让主内容区撑满剩余高度 */
-.cn-screen-fill {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.cn-screen-fill > .cn-fill-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 信息瓷片网格 */
 .cn-tile-grid {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.75rem;
   grid-template-columns: 1fr;
 }
 
@@ -267,7 +184,7 @@ body {
   border-radius: var(--radius-paper);
   border: 1px solid var(--line);
   background: rgba(255, 252, 247, 0.92);
-  padding: 0.85rem 0.95rem;
+  padding: 0.95rem 1rem;
   transition:
     transform 0.2s var(--ease-out),
     border-color 0.2s,
@@ -295,36 +212,18 @@ body {
   color: var(--muted);
 }
 
-/* 短屏：压缩留白，优先内容饱满 */
-@media (max-height: 740px) {
-  .cn-screen-inner {
-    padding-top: max(3.75rem, calc(env(safe-area-inset-top, 0px) + 3rem));
-    padding-bottom: max(3.75rem, calc(env(safe-area-inset-bottom, 0px) + 3.25rem));
+@media (max-width: 767px) {
+  .cn-shell .ant-select,
+  .cn-shell .ant-input,
+  .cn-shell .ant-input-affix-wrapper,
+  .cn-shell .ant-btn {
+    max-width: 100%;
   }
 
-  .cn-scroll-hint {
-    display: none;
-  }
-
-  .cn-hide-short {
-    display: none !important;
-  }
-}
-
-@media (max-height: 640px) {
-  .cn-screen-inner {
-    padding-top: 3.4rem;
-  }
-
-  .cn-section-dots {
-    display: none;
-  }
-}
-
-/* 宽屏圆点更靠右；极窄隐藏标签仅留点 */
-@media (max-width: 380px) {
-  .cn-section-dot span.label {
-    display: none;
+  .cn-shell .ant-btn {
+    height: auto;
+    min-height: 2.5rem;
+    white-space: normal;
   }
 }
 
@@ -1537,108 +1436,6 @@ body {
   }
 }
 
-/* 侧栏分屏导航 */
-.cn-section-dots {
-  position: fixed;
-  right: 0.65rem;
-  top: 50%;
-  z-index: 45;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  transform: translateY(-50%);
-}
-
-@media (min-width: 768px) {
-  .cn-section-dots {
-    right: 1.1rem;
-  }
-}
-
-.cn-section-dot {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.4rem;
-  border: 0;
-  background: transparent;
-  padding: 0.15rem;
-  cursor: pointer;
-  color: var(--muted);
-}
-
-.cn-section-dot span.dot {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(26, 58, 82, 0.25);
-  background: rgba(255, 252, 247, 0.9);
-  transition:
-    transform 0.25s var(--ease-out),
-    background 0.25s,
-    border-color 0.25s,
-    box-shadow 0.25s;
-}
-
-.cn-section-dot span.label {
-  font-size: 0.65rem;
-  letter-spacing: 0.14em;
-  opacity: 0;
-  max-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  transition:
-    opacity 0.2s,
-    max-width 0.25s var(--ease-out);
-}
-
-.cn-section-dot:hover span.label,
-.cn-section-dot[aria-current="true"] span.label {
-  opacity: 1;
-  max-width: 4rem;
-}
-
-.cn-section-dot[aria-current="true"] {
-  color: var(--daiqing);
-}
-
-.cn-section-dot[aria-current="true"] span.dot {
-  transform: scale(1.35);
-  background: var(--daiqing);
-  border-color: var(--daiqing);
-  box-shadow: 0 0 0 3px rgba(26, 58, 82, 0.12);
-}
-
-.cn-section-dot:focus-visible {
-  outline: 2px solid rgba(26, 58, 82, 0.35);
-  outline-offset: 2px;
-  border-radius: 0.25rem;
-}
-
-/* 下滚提示 */
-.cn-scroll-hint {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.68rem;
-  letter-spacing: 0.16em;
-  cursor: pointer;
-  padding: 0.35rem;
-}
-
-.cn-scroll-hint:hover {
-  color: var(--daiqing);
-}
-
-.cn-scroll-hint svg {
-  width: 1.1rem;
-  height: 1.1rem;
-}
-
 /* —— 装饰原语 · 八卦 · 道韵 —— */
 .cn-ornament-line {
   height: 12px;
@@ -2296,17 +2093,6 @@ textarea.cn-input {
   font-variant-numeric: tabular-nums;
 }
 
-.cn-bottom-nav {
-  border-top: 1px solid var(--line);
-  background: rgba(255, 252, 247, 0.97);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 -8px 24px -16px rgba(15, 39, 64, 0.25);
-}
-
-.cn-app-header {
-  /* 手机顶栏更实，避免内容透出难点 */
-}
 
 /* 上传组件对齐主题 */
 .ele-upload__input {
@@ -2468,4 +2254,13 @@ textarea.cn-input {
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
+}
+
+
+.cn-bottom-nav {
+  border-top: 1px solid var(--line);
+  background: rgba(255, 252, 247, 0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 -8px 24px -16px rgba(15, 39, 64, 0.25);
 }
